@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>STT Faucet</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 700px;
+        margin: 40px auto;
+        padding: 20px;
+      }
+      .box {
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+      input {
+        width: 100%;
+        padding: 10px;
+        margin: 10px 0;
+        font-size: 16px;
+        box-sizing: border-box;
+      }
+      button {
+        padding: 10px 18px;
+        font-size: 16px;
+        cursor: pointer;
+      }
+      #result,
+      #info {
+        margin-top: 12px;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>STT Faucet</h1>
+    <p>Nhận token STT trên Polygon Amoy testnet</p>
+
+    <div class="box">
+      <h3>Thông tin faucet</h3>
+      <div id="info">Đang tải...</div>
+    </div>
+
+    <div class="box">
+      <h3>Nhập địa chỉ ví để nhận STT</h3>
+      <input id="wallet" type="text" placeholder="0x..." />
+      <button onclick="claimSTT()">Claim STT</button>
+      <div id="result"></div>
+    </div>
+
+    <script>
+      async function loadInfo() {
+        const info = document.getElementById("info");
+        try {
+          const res = await fetch("/info");
+          const data = await res.json();
+
+          if (data.success) {
+            info.innerText =
+              "Token: " +
+              data.tokenName +
+              " (" +
+              data.symbol +
+              ")\n" +
+              "Contract: " +
+              data.tokenAddress +
+              "\n" +
+              "Ví faucet: " +
+              data.faucetAddress +
+              "\n" +
+              "Số dư faucet: " +
+              data.faucetBalance +
+              " " +
+              data.symbol;
+          } else {
+            info.innerText = "Không tải được thông tin faucet";
+          }
+        } catch (e) {
+          info.innerText = "Lỗi kết nối server";
+        }
+      }
+
+      async function claimSTT() {
+        const wallet = document.getElementById("wallet").value.trim();
+        const result = document.getElementById("result");
+        result.innerText = "Đang gửi yêu cầu...";
+
+        try {
+          const res = await fetch("/claim", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ address: wallet }),
+          });
+
+          const data = await res.json();
+
+          if (data.success) {
+            result.innerText = data.message + "\nTx Hash: " + data.txHash;
+            loadInfo();
+          } else {
+            result.innerText =
+              "Lỗi: " + data.message + (data.error ? "\n" + data.error : "");
+          }
+        } catch (e) {
+          result.innerText = "Không gọi được server";
+        }
+      }
+
+      loadInfo();
+    </script>
+  </body>
+</html>
